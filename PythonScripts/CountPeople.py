@@ -10,31 +10,19 @@ import datetime
 import thread
 import time
 
-# initialize the HOG descriptor/person detector
-hog = cv2.HOGDescriptor()
-hog.setSVMDetector(cv2.HOGDescriptor_getDefaultPeopleDetector())
+classifier = cv2.CascadeClassifier('/home/avi/opencv-haar-classifier-training/classifier2/cascade.xml')
 
-cap = cv2.VideoCapture('/home/avi/Desktop/allStuff/IMG_1460.MOV')
-#cap = cv2.VideoCapture(0)
-#cap = cv2.VideoCapture('http://192.168.0.90/mjpg/video.mjpg')
+cap = cv2.VideoCapture('/home/avi/Desktop/PositiveVid.webm')
 cv2.namedWindow('Stream', cv2.WINDOW_AUTOSIZE)
 
 
 prevTime = datetime.datetime.now()
 
-while(True):
-
-	currentTime = datetime.datetime.now()
-	print("Last frame took {} seconds".format(currentTime - prevTime))
-	prevTime = currentTime
-
-	# Capture frame-by-frame
-	ret, frame = cap.read()
-	
+def processImage(frame):
 	#frame = imutils.resize(frame, width = min(600, frame.shape[1]))
 
 	# detect people in the image
-	(rects, weights) = hog.detectMultiScale(frame, winStride=(4, 4), padding=(8, 8), scale=1.05)
+	rects = classifier.detectMultiScale(frame, 1.1, 200)# winStride=(4, 4), padding=(8, 8), scale=1.05)
 
 	# apply non-maxima suppression to the bounding boxes using a
 	# fairly large overlap threshold to try to maintain overlapping
@@ -46,15 +34,24 @@ while(True):
 	for (xA, yA, xB, yB) in pick:
 		cv2.rectangle(frame, (xA, yA), (xB, yB), (0, 255, 0), 2)
 
-	# show some information on the number of bounding boxes
-	print("[INFO]: {} are currently detected in stream".format(len(pick)))
-	print(weights)
+	# show some information on the number of bounding boxe
+s	print("[INFO]: {} are currently detected in stream".format(len(pick)))
 
 	# show the output images
 	cv2.imshow('Stream', frame)
 
-	if cv2.waitKey(1) & 0xFF == ord('q'):
-		break
+	cv2.waitKey(1)
+
+while(True):
+
+	currentTime = datetime.datetime.now()
+	print("Last frame took {} seconds".format(currentTime - prevTime))
+	prevTime = currentTime
+
+	# Capture frame-by-frame
+	ret, currentFrame = cap.read()
+	
+	processImage(currentFrame)
 
 # When everything done, release the capture
 cap.release()
