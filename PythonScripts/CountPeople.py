@@ -10,13 +10,12 @@ import datetime
 import thread
 import time
 
-classifier = cv2.CascadeClassifier('/home/avi/opencv-haar-classifier-training/classifier2/cascade.xml')
+classifier = cv2.CascadeClassifier('/home/avi/opencv-haar-classifier-training/classifier3/cascade.xml')
 
-cap = cv2.VideoCapture('/home/avi/Desktop/PositiveVid.webm')
-cv2.namedWindow('Stream', cv2.WINDOW_AUTOSIZE)
-
-
-prevTime = datetime.datetime.now()
+cap = cv2.VideoCapture('/home/avi/Desktop/OUTPUT1.avi')
+#cap = cv2.VideoCapture('http://192.168.206.175/mjpg/video.mjpg')
+#cap = cv2.VideoCapture(0)
+#cv2.namedWindow('Stream', cv2.WINDOW_AUTOSIZE)
 
 def processImage(frame):
 	#frame = imutils.resize(frame, width = min(600, frame.shape[1]))
@@ -31,22 +30,20 @@ def processImage(frame):
 	pick = non_max_suppression(rects, probs=None, overlapThresh=0.65)
 
 	# draw the final bounding boxes
-	for (xA, yA, xB, yB) in pick:
+	for (xA, yA, xB, yB) in pick:	
 		cv2.rectangle(frame, (xA, yA), (xB, yB), (0, 255, 0), 2)
 
 	# show some information on the number of bounding boxe
-s	print("[INFO]: {} are currently detected in stream".format(len(pick)))
+	print("[INFO]: {} are currently detected in stream".format(len(pick)))
 
 	# show the output images
-	cv2.imshow('Stream', frame)
-
+	try:
+		cv2.imshow('Stream', frame)
+	except:
+		pass
 	cv2.waitKey(1)
 
 while(True):
-
-	currentTime = datetime.datetime.now()
-	print("Last frame took {} seconds".format(currentTime - prevTime))
-	prevTime = currentTime
 
 	# Capture frame-by-frame
 	ret, currentFrame = cap.read()

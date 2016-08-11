@@ -21,9 +21,9 @@ class Image:
 		except:
 			pass
 
-imagesPath = '/home/avi/Desktop/A/'
+imagesPath = '/home/avi/Desktop/PositiveImages/All/'
 numberOfClusters = 10
-savePath = '/home/avi/opencv-haar-classifier-training/positive_images/'
+savePath = '/home/avi/Desktop/PositiveImages/Clustered/'
 
 images = [f for f in listdir(imagesPath) if isfile(join(imagesPath, f))]
 

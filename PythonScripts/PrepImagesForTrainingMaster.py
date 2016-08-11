@@ -14,20 +14,39 @@ import sys
 from os import listdir
 from os.path import isfile, join
 
-cap = cv2.VideoCapture('/home/avi/Desktop/PositiveVid.webm')
-WRITE_LOCATION = '/home/avi/Desktop/A/'
+cap = cv2.VideoCapture('/home/avi/Desktop/OUTPUT1.avi')
+WRITE_LOCATION = '/home/avi/Desktop/PositiveImages/ForTraining/'
 
 kernel = np.ones((2,2),np.uint8)
 fgbg = cv2.bgsegm.createBackgroundSubtractorMOG()
 
 counter = 0
 
-startTime = datetime.datetime.now()
-
 GROUPING_DIST = 500
 MIN_RECT_SIZE = 20
 RECT_PADDING = 30
 NUMBER_OF_CLUSTERS = 10
+
+
+def printProgress (iteration, total, prefix = 'Progress:', suffix = 'Complete', decimals = 2, barLength = 100):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : number of decimals in percent complete (Int)
+        barLength   - Optional  : character length of bar (Int)
+    """
+    filledLength    = int(round(barLength * iteration / float(total)))
+    percents        = round(100.00 * (iteration / float(total)), decimals)
+    bar             = u'\u2588' * filledLength + '-' * (barLength - filledLength)
+    sys.stdout.write('\r%s |%s| %s%s %s' % (prefix, bar, percents, '%', suffix)),
+    sys.stdout.flush()
+    if iteration == total:
+        sys.stdout.write('\r%s |%s| Complete\n' % (prefix, bar, percents, '%', suffix)),
+        sys.stdout.flush()
 
 class Cluster:
 	def __init__ (self, center, values):
@@ -108,11 +127,6 @@ def isClose(rect1, rect2, dist):
 	return (midPntDistance - interiorDist(rect1[2], rect1[3], absSlope) - interiorDist(rect2[2], rect2[3], absSlope)) < dist
 
 def generatePts(rect):
-	# pt1 = Pt((rect[0], rect[1])
-	# pt2 = Pt((rect[0] + rect[2], rect[1]))
-	# pt3 = Pt((rect[0], rect[1] + rect[3]))
-	# pt4 = Pt((rect[0] + rect[2], rect[1] + rect[3]))
-	# return [pt1, pt2, pt3, pt4]
 	return [Pt((rect[0], rect[1])), Pt((rect[0] + rect[2], rect[1])), Pt((rect[0], rect[1] + rect[3])), Pt((rect[0] + rect[2], rect[1] + rect[3]))]
 
 def bindRects(rect1, rect2):
@@ -130,17 +144,6 @@ def bindRects(rect1, rect2):
 	pts.sort(key=lambda pt: pt.y)
 	yMin = pts[0].y
 	yMax = pts[-1].y
-
-
-	# for pt in pts:
-	# 	# if pt[0] < xMin:
-	# 	# 	xMin = pt[0]
-	# 	# elif pt[0] > xMax:
-	# 	# 	xMax = pt[0]
-	# 	if pt[1] < yMin:
-	# 		yMin = pt[1]
-	# 	elif pt[1] > yMax:
-	# 		yMax = pt[1]
 	return (xMin, yMin, xMax - xMin, yMax - yMin)
 
 def groupRects(rects):
@@ -173,10 +176,6 @@ def processImage(frame, conts, count):
 		if i != LENGTH-1:
 			for j,cnt2 in enumerate(conts[i+1:]):
 				x += 1
-				# if isClose(cnt1,cnt2, GROUPING_DIST):	
-				# 	val = min(status[i],status[x])
-				# 	status[x] = status[i] = val
-				# else:
 				if status[x]==status[i]:
 					status[x] = i+1
 
@@ -216,30 +215,30 @@ while(True):
 			# newThread = ct.MyThread(processImage, frame, contours, counter)
 			# newThread.start()
 	counter += 1
-	print(counter)
+	sys.stdout.write("\r {} frames processed".format(counter))
+	sys.stdout.flush()
 
 NUM_OF_ROI = 0
 for currentPic in images:
 	NUM_OF_ROI += len(currentPic.roi)
 
 dimensions = np.empty(NUM_OF_ROI)
-
 counter = 0
 for currentPic in images:
 	for roi in currentPic.roi:
 		dimensions[counter] = roi.r
-	counter += 1
+		counter += 1
 
 dimensions = np.float32(dimensions)
 
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
 flags = cv2.KMEANS_RANDOM_CENTERS
-compactness,label,centers = cv2.kmeans(dimensions,NUMBER_OF_CLUSTERS,None,criteria,10,flags)
+compactness,labels,centers = cv2.kmeans(dimensions,NUMBER_OF_CLUSTERS,None,criteria,10,flags)
 
 clusters = []
 
 for x in range(0, NUMBER_OF_CLUSTERS):
-	clusters.append(Cluster(centers[x], dimensions[label.ravel()==x]))
+	clusters.append(Cluster(centers[x], dimensions[labels.ravel()==x]))
 
 clusters.sort(key=lambda x: x.center)
 
@@ -268,35 +267,32 @@ for x in arraysChosen:
 		currentString = ""
 arrays.append(int(currentString))
 imagesToSave = []
-for array in arrays:
-	chosenMin = min(clusters[array].values)
-	chosenMax = max(clusters[array].values)
-	for image in images:
-		for roi in image.roi:
-			if roi.r >= chosenMin and roi.r <= chosenMax:
-				imagesToSave.append(image)
 
-dataFile = open(WRITE_LOCATION + 'info.dat', 'w')
+for x in range (0,len(labels)):
+	print(labels[x])
+	if labels[x] in arrays:
+		imagesToSave.append(images[x])
+
+#dataFile = open(WRITE_LOCATION + 'info.dat', 'w')
 SPACING = '  '
-for x in range(0, len(imagesToSave)):
-	writeString = WRITE_LOCATION + '{}.jpg'.format(x)
+NUM_OF_IMGS_TO_SAVE = len(imagesToSave)
+for x in range(0, NUM_OF_IMGS_TO_SAVE):
+	imageFileName = 'pha.{}.jpg'.format(x)
 	numOfROI = str(len(imagesToSave[x].roi))
 	descriptionOfRoi = ""
 	for roi in imagesToSave[x].roi:
 		descriptionOfRoi += "{}{} {} {} {}".format(SPACING, roi.x, roi.y, roi.w, roi.h)
-	try:
-		cv2.imwrite(writeString, imagesToSave[x].image)
-		dataFile.write(writeString + SPACING + numOfROI + descriptionOfRoi + '\n')
-	except:
-		pass
-dataFile.close()
+		cv2.imwrite(WRITE_LOCATION + imageFileName, imagesToSave[x].image[roi.y:roi.y+roi.h, roi.x:roi.x+roi.w])
+	# try:
+	# 	cv2.imwrite(WRITE_LOCATION + imageFileName, imagesToSave[x].image[image.roi.y:image.roi.y+image.roi.h, image.roi.x:image.roi.x+image.roi.w])
+	# 	#dataFile.write(imageFileName + SPACING + numOfROI + descriptionOfRoi + '\n')
+	# except:
+	# 	pass
+	#printProgress(x, NUM_OF_IMGS_TO_SAVE - 1)
+#dataFile.close()
 
 
 cap.release()
 cv2.destroyAllWindows()
-
-endTime = datetime.datetime.now()
-runTime = endTime - startTime
-print("Total run time was {} seconds".format(runTime))
-print("done")
+print("Complete.")
 
