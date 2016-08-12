@@ -8,6 +8,23 @@ import cv2
 import sys
 import SI2016IPS_Required_Imports as reqi
 
+def getStereo(bss):
+	returns = []
+	for bs in bss:
+		returnVal = next(bs.get())
+		if not returnVal:
+			return None
+		elif not returns:
+			returns.append(returnVal)
+			break
+		elif len(returnVal) == len(returns[0]):
+			returns.append(returnVal)
+
+	return returns
+
+	if img1cnts and img2cnts:
+		return (img1cnts, img2cnts)
+
 class BS:
 	def __init__(self, negativeVid, kernelSize=10, minContourArea=5000):
 		self.kernel = np.ones((kernelSize,kernelSize),np.uint8)
