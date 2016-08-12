@@ -9,9 +9,10 @@ import sys
 import SI2016IPS_Required_Imports as reqi
 
 class BS:
-	def __init__(self, negativeVid):
-		self.kernel = np.ones((10,10),np.uint8)
+	def __init__(self, negativeVid, kernelSize=10, minContourArea=5000):
+		self.kernel = np.ones((kernelSize,kernelSize),np.uint8)
 		self.fgbg = cv2.createBackgroundSubtractorMOG2()
+		self.minContourArea = minContourArea
 		self.frameCounter = 0
 		self.cap = cv2.VideoCapture(negativeVid)
 		ret, frame = self.cap.read()
@@ -50,14 +51,11 @@ class BS:
 				cv2.fillPoly(mask, contours, ignore_mask_color)
 				# apply the mask
 				masked_image = cv2.bitwise_and(frame, mask)
-				lastLargestArea = 0
-				currentLargestCnt = None
-				for cnt in contours:
-					if cv2.contourArea(cnt) > lastLargestArea:
-						lastLargestArea = cv2.contourArea(cnt)
-						currentLargestCnt = cnt
-				if currentLargestCnt is not None:
-					x,y,w,h = cv2.boundingRect(currentLargestCnt)
-					masked_image = masked_image[y:y+h, x:x+w]
-					if lastLargestArea > 15000:
-						yield (masked_image, (x,y,w,h), frame)
+				if len(contours != 0):
+					returnContours = []
+					for cnt in contours:
+						if cv2.contourArea(cnt) > self.minContourArea
+						x,y,w,h = cv2.boundingRect(currentLargestCnt)
+						masked_image = masked_image[y:y+h, x:x+w]
+						returnContours.append((masked_image, (x,y,w,h), frame))
+					yield returnContours
