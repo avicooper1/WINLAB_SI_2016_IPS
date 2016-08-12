@@ -29,9 +29,6 @@ def readYAMLFile(filePath, header):
 def setTrainingFiles(imagesLoc, inputOutputDirLoc):
 	global INPUT_DIR
 	global INPUT_KEY
-	global network
-	global flann
-	global descriptors
 	global OUTPUT_DIR
 	global OUTPUT_KEY
 	global DESCRIPTORS_DIR
@@ -44,13 +41,19 @@ def setTrainingFiles(imagesLoc, inputOutputDirLoc):
 	DESCRIPTORS_DIR = inputOutputDirLoc + "/Vocabulary"
 	DESCRIPTORS_KEY = "asdf"
 
-def createTrainingFiles(cppFileLoc):
+def createTrainingFiles(cppFileLoc, imagesLoc):
 	print "Creating training files"
 	os.system("{} {} {} {} {} {} {}".format(cppFileLoc, imagesLoc, NUM_INPUT_NEURONS, INPUT_DIR, INPUT_KEY, OUTPUT_DIR, OUTPUT_KEY))
 	print "done"
 
 def train():
+
+	global network
+	global flann
+	global descriptors
+
 	print "Training network"
+
 	inputNeurons = readYAMLFile(INPUT_DIR, INPUT_KEY)
 	outputNeurons = readYAMLFile(OUTPUT_DIR, OUTPUT_KEY)
 	descriptors = readYAMLFile(DESCRIPTORS_DIR, DESCRIPTORS_KEY)
@@ -62,46 +65,15 @@ def train():
 	network.setTermCriteria((cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 20, 1))
 	network.train(inputNeurons, cv2.ml.ROW_SAMPLE, outputNeurons)
 
-	cv2.ocl.setUseOpenCL(False)
-
-	# FLANN parameters
-	FLANN_INDEX_KDTREE = 0
-	index_params = dict(algorithm = FLANN_INDEX_KDTREE, trees = 5)
-	search_params = dict(checks=50)   # or pass empty dictionary
-
-	flann = cv2.FlannBasedMatcher(index_params,search_params)
-	print descriptors
-	flann.add(descriptors)
-	flann.train()
-
 	print "done"
 
 def predict(image):
 	IMAGE_LOC = "/home/avi/Desktop/ImageHoldingFolder"
 	IMAGE_ADD_ON = "/aaa.000.jpg"
-	OUTPUT_DIR = "/home/avi/Desktop/ASDF"
-	OUTPUT_KEY = "ASDF"
+	INDIVIDUAL_DESCRIPTORS_DIR = "/home/avi/Desktop/ASDF"
+	INDIVIDUAL_DESCRIPTORS_KEY = "asdf"
 	cv2.imwrite(IMAGE_LOC + IMAGE_ADD_ON, image)
-	print 'q'
-	describeSuccess = os.system("/home/avi/workspace/DisplayImage/Debug/DisplayImage {} {} {}".format(IMAGE_LOC, OUTPUT_DIR, OUTPUT_KEY))
-	print 't'
-	if describeSuccess != 0:
-		#Prediction failed. This is probably be due to too few desciptors for the given OUTPUT
-		return -1
-	print "a"
-	individualDescriptors = readYAMLFile(INPUT_DIR, INPUT_KEY)
-	print "b"
+	describeSuccess = os.system("/home/avi/workspace/DisplayImage/Debug/DisplayImage {} {} {} {} {} {} a".format(IMAGE_LOC, NUM_INPUT_NEURONS, INDIVIDUAL_DESCRIPTORS_DIR, INDIVIDUAL_DESCRIPTORS_KEY, DESCRIPTORS_DIR, DESCRIPTORS_KEY))
+	individualDescriptors = readYAMLFile(INDIVIDUAL_DESCRIPTORS_DIR, INDIVIDUAL_DESCRIPTORS_KEY)
 	os.system("rm {}".format(IMAGE_LOC + IMAGE_ADD_ON))
-
-	BOWFeatures = []
-
-	print "c"
-	matches = flann.match(descriptors)
-	for x in matches:
-		BOWFeatures.append(x.trainIdx)
-
-	print matches
-
-	# a = network.predict(inputNeurons)
-	# print a
-	# return a[0]
+	return network.predict(individualDescriptors)[0]
