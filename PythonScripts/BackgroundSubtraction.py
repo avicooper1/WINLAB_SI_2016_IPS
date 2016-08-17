@@ -26,18 +26,21 @@ def getStereo(bss):
 		return (img1cnts, img2cnts)
 
 class BS:
-	def __init__(self, negativeVid, kernelSize=10, minContourArea=5000):
+	def __init__(self, negativeVid, kernelSize=10, minContourArea=10000):
 		self.kernel = np.ones((kernelSize,kernelSize),np.uint8)
 		self.fgbg = cv2.createBackgroundSubtractorMOG2()
 		self.minContourArea = minContourArea
 		self.frameCounter = 0
 		self.cap = cv2.VideoCapture(negativeVid)
-		ret, frame = self.cap.read()
-		while self.frameCounter <= 120:
+		print "Capturing negative data"
+		while self.frameCounter <= 121:
+			ret, frame = self.cap.read()
 			if not ret:
 				break
 			else:
 				self.frameCounter += 1
+				reqi.mf.printProgress(self.frameCounter, 122)
+		print "Finished capturing negative data. Setup finished"
 
 	def setupPos(self, positiveVid):
 		self.cap = cv2.VideoCapture(positiveVid)
@@ -68,11 +71,12 @@ class BS:
 				cv2.fillPoly(mask, contours, ignore_mask_color)
 				# apply the mask
 				masked_image = cv2.bitwise_and(frame, mask)
-				if len(contours != 0):
+				if contours != 0:
 					returnContours = []
 					for cnt in contours:
-						if cv2.contourArea(cnt) > self.minContourArea
-						x,y,w,h = cv2.boundingRect(currentLargestCnt)
-						masked_image = masked_image[y:y+h, x:x+w]
-						returnContours.append((masked_image, (x,y,w,h), frame))
-					yield returnContours
+						if cv2.contourArea(cnt) > self.minContourArea:
+							x,y,w,h = cv2.boundingRect(cnt)
+							masked_image = masked_image[y:y+h, x:x+w]
+							returnContours.append((masked_image, (x,y,w,h), frame))
+					if returnContours:
+						yield returnContours

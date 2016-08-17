@@ -1,4 +1,6 @@
 import cv2
+import SI2016IPS_Required_Imports as reqi
+import sys
 
 def printProgress (iteration, total, prefix = 'Progress:', suffix = 'Complete', decimals = 2, barLength = 100):
     """
@@ -17,8 +19,7 @@ def printProgress (iteration, total, prefix = 'Progress:', suffix = 'Complete', 
     sys.stdout.write('\r%s |%s| %s%s %s' % (prefix, bar, percents, '%', suffix)),
     sys.stdout.flush()
     if iteration == total:
-        sys.stdout.write('\r%s |%s| Complete\n' % (prefix, bar, percents, '%', suffix)),
-        sys.stdout.flush()
+        print
 
 def readImagesFromFile(filePath):
     images = []
@@ -48,3 +49,7 @@ def writeImagesToFile(images, filePath):
 def showImage(image, windowName = "Frame", waitTime = 1):
     cv2.imshow(windowName, image)
     cv2.waitKey(waitTime)
+
+def ensureDir(dir):
+    if not reqi.os.path.exists(dir):
+        reqi.os.makedirs(dir)
